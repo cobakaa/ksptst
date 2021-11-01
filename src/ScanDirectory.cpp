@@ -3,18 +3,18 @@
 #include <fstream>
 #include <future>
 
-void FinalStat::ScanDirectory(const std::string& dir) {
+void FinalStat::ScanDirectory(const std::filesystem::path& dir) {
     timer.Start();
 
     std::vector<std::future<SuspicionType>> fut_vec;
 
-    std::filesystem::path dir_path{dir};
-    for (const auto & entry : std::filesystem::directory_iterator{dir_path}) {
+    for (const auto & entry : std::filesystem::directory_iterator{dir}) {
         if (is_regular_file(entry)) {
 
-            fut_vec.push_back(std::async(std::launch::async, [](const std::string& str) { // with parameter
-                return GetSuspicionType(str);
-            }, entry.path().string()));
+            fut_vec.push_back(std::async(std::launch::async, [](const std::filesystem::path& p) { // with parameter
+                return GetSuspicionType(p);
+            }, entry.path()));
+//            ChangeStat(GetSuspicionType(entry.path()));
         }
     }
 
@@ -47,16 +47,18 @@ void FinalStat::ChangeStat(const SuspicionType& t) {
     }
 }
 
-void FinalStat::PrintStat() {
-    std::cout << "====== Scan result ======" << "\n\n"
-    << "Processed files: " << processed_files_num << "\n\n"
-    << "JS detects: " << js_detects_num << "\n\n"
-    << "CMD detects: " << cmd_detects_num << "\n\n"
-    << "EXE detects: " << exe_detects_num << "\n\n"
-    << "Errors: " << errors_num << "\n\n";
-    std::cout << "Execution time: " << timer.hours.count() << ":" << timer.mins.count() << ":"
-    << timer.secs.count() << " " << timer.t.count() << "\n\n"
+std::ostream& operator<< (std::ostream &out, const FinalStat &fs) {
+    out << "====== Scan result ======" << "\n\n"
+    << "Processed files: " << fs.processed_files_num << "\n\n"
+    << "JS detects: " << fs.js_detects_num << "\n\n"
+    << "CMD detects: " << fs.cmd_detects_num << "\n\n"
+    << "EXE detects: " << fs.exe_detects_num << "\n\n"
+    << "Errors: " << fs.errors_num << "\n\n"
+    << "Execution time: " << fs.timer.hours.count() << ":" << fs.timer.mins.count()
+    << ":" << fs.timer.secs.count() << " " << fs.timer.t.count() << "\n\n"
     << "=========================" << std::endl;
+
+    return out;
 }
 
 bool StringInFile(const std::string& path, std::string str) {
@@ -72,8 +74,8 @@ bool StringInFile(const std::string& path, std::string str) {
     return BMSearch(file_content, str);
 }
 
-SuspicionType GetSuspicionType(const std::string& path) {
-    std::string ext = std::filesystem::path(path).extension().string();
+SuspicionType GetSuspicionType(const std::filesystem::path& path) {
+    std::string ext = path.extension().string();
     for (auto & item : PATTERN) {
         for (auto & p_ext : item.second.first) {
             if (StringsEquals(p_ext, ext)) {

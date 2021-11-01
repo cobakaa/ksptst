@@ -9,4 +9,4 @@ include_directories(.)
 
 add_executable(ksptst
         a.out
-        main.cpp include/ScanDirectory.h src/ScanDirectory.cpp include/Search.h src/Search.cpp tst/Test.cpp src/Timer.cpp include/Timer.h)
+        main.cpp include/ScanDirectory.h src/ScanDirectory.cpp include/Search.h src/Search.cpp src/Timer.cpp include/Timer.h)
